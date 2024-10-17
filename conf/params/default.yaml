@@ -1,0 +1,12 @@
+# @package _global_
+
+cuda: 0
+device: cpu
+seed: 42
+lr: 0.0001
+reg_coef: 0.0
+transformer_n_layer: 2
+batch_size: 128
+val_batch_size: 128
+epochs: 10
+save_with_val: true
