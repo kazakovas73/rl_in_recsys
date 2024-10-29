@@ -10,38 +10,27 @@ class KRMBUserResponse(BaseModel):
     '''
     KuaiRand Multi-Behavior user response model
     '''
-        
-    def log(self):
-        print("KRMBUserResponse params:")
-        print(f"\tuser_latent_dim: {self.user_latent_dim}")
-        print(f"\titem_latent_dim: {self.item_latent_dim}")
-        print(f"\tenc_dim: {self.enc_dim}")
-        print(f"\tattn_n_head: {self.attn_n_head}")
-        print(f"\tscorer_hidden_dims: {self.scorer_hidden_dims}")
-        print(f"\tdropout_rate: {self.dropout_rate}")
-        print(f"\tstate_dim: {self.state_dim}")
-        super().log()
-            
     def __init__(
-            self, 
+        self, 
 
-            model_path,
-            loss,
-            l2_coef,
-            
-            user_latent_dim,
-            item_latent_dim,
-            enc_dim,
-            attn_n_head,
-            transformer_d_forward,
-            transformer_n_layer,
-            state_hidden_dims,
-            scorer_hidden_dims,
-            dropout_rate,
+        model_path,
+        loss,
+        l2_coef,
+        
+        user_latent_dim,
+        item_latent_dim,
+        enc_dim,
+        attn_n_head,
+        transformer_d_forward,
+        transformer_n_layer,
+        state_hidden_dims,
+        scorer_hidden_dims,
+        dropout_rate,
 
-            reader_stats,
+        reader_stats,
 
-            device
+        device,
+        logger
             
         ):
         super().__init__(model_path, loss, l2_coef, device)
@@ -110,6 +99,12 @@ class KRMBUserResponse(BaseModel):
         self.scorer_hidden_dims = scorer_hidden_dims
         self.scorer = DNN(3*enc_dim, state_hidden_dims, self.feedback_dim * enc_dim, 
                           dropout_rate = dropout_rate, do_batch_norm = True)
+        
+        logger.info("SIMULATOR layers:")
+        logger.info(f"Positional embeddings: {self.posEmb}")
+        logger.info(f"Transformer layer: {self.transformer}")
+        logger.info(f"Scorer layer: {self.scorer}")
+
         
     def to(self, device):
         new_self = super(KRMBUserResponse, self).to(device)

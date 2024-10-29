@@ -1,7 +1,8 @@
 import torch.nn as nn
 
+
 class DNN(nn.Module):
-    def __init__(self, in_dim, hidden_dims, out_dim = 1, dropout_rate = 0., do_batch_norm = True):
+    def __init__(self, in_dim, hidden_dims, out_dim=1, dropout_rate=0., do_batch_norm=True):
         super(DNN, self).__init__()
         self.in_dim = in_dim
         layers = []
@@ -17,7 +18,7 @@ class DNN(nn.Module):
             if dropout_rate > 0:
                 layers.append(nn.Dropout(dropout_rate))
             if do_batch_norm:
-#                 layers.append(nn.BatchNorm1d(hidden_dim))
+                #                 layers.append(nn.BatchNorm1d(hidden_dim))
                 layers.append(nn.LayerNorm([hidden_dim]))
 
         # prediction layer
@@ -26,7 +27,7 @@ class DNN(nn.Module):
         # torch.nn.init.xavier_uniform_(last_layer.weight, gain=1.0)
 
         self.layers = nn.Sequential(*layers)
-        
+
     def forward(self, inputs):
         """
         @input:

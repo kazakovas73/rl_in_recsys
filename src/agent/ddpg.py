@@ -37,7 +37,8 @@ class DDPG(BaseRLAgent):
         env, 
         actor, 
         critic, 
-        buffer    
+        buffer,
+        logger  
     ):
         '''
         components:
@@ -54,7 +55,6 @@ class DDPG(BaseRLAgent):
             - registered_models
         '''
         super().__init__(
-            gamma,
             reward_func,
             n_iter,
             train_every_n_step,
@@ -71,8 +71,11 @@ class DDPG(BaseRLAgent):
             actor_decay,
             batch_size,
             device,
-            env, actor, buffer)
+            env, actor, buffer,
+            logger)
         
+        self.gamma = gamma
+
         self.critic_lr = critic_lr
         self.critic_decay = critic_decay
         self.tau = target_mitigate_coef

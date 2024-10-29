@@ -22,7 +22,6 @@ class BaseRLAgent():
     def __init__(
         self, 
 
-        gamma,
         reward_func,
         n_iter,
         train_every_n_step,
@@ -43,9 +42,10 @@ class BaseRLAgent():
 
         env, 
         actor, 
-        buffer
+        buffer,
+
+        logger
     ):
-        self.gamma = gamma
         self.reward_func = reward_func
         self.n_iter = n_iter
         self.train_every_n_step = train_every_n_step
@@ -66,6 +66,7 @@ class BaseRLAgent():
         self.batch_size = batch_size
 
         self.device = device
+        self.logger = logger
 
         # components
         self.env = env
@@ -97,13 +98,13 @@ class BaseRLAgent():
             self.load()
         
         t = time.time()
-        print("Run procedures before training")
+        self.logger.info("Run procedures before training")
         self.action_before_train()
         t = time.time()
         start_time = t
         
         # training
-        print("Training:")
+        self.logger.info("Training:")
         step_offset = sum(self.n_iter[:-1])
         do_buffer_update = True
         observation = deepcopy(self.env.current_observation)
@@ -118,12 +119,12 @@ class BaseRLAgent():
             # log monitor records
             if i > 0 and i % self.check_episode == 0:
                 t_prime = time.time()
-                print(f"Episode step {i}, time diff {t_prime - t}, total time diff {t - start_time})")
+                self.logger.info(f"Episode step {i}, time diff {t_prime - t}, total time diff {t - start_time})")
                 episode_report, train_report = self.get_report(smoothness = self.check_episode)
                 log_str = f"step: {i} @ online episode: {episode_report} @ training: {train_report}\n"
                 with open(self.save_path + ".report", 'a') as outfile:
                     outfile.write(log_str)
-                print(log_str)
+                self.logger.info(log_str)
                 t = t_prime
 
             # save model and training info
@@ -229,7 +230,7 @@ class BaseRLAgent():
                 self.buffer.update(observation, policy_output, user_feedback, update_info['updated_observation'])
         return new_observation
     
-    def apply_policy(self, observation, actor, *policy_args):
+    def apply_policy(self, observation, actor, epsilon, do_explore, is_train):
         '''
         @input:
         - observation:{'user_profile':{
@@ -245,16 +246,13 @@ class BaseRLAgent():
         @output:
         - policy_output
         '''
-        epsilon = policy_args[0]
-        do_explore = policy_args[1]
-        is_train = policy_args[2]
         input_dict = {'observation': observation, 
                       'candidates': self.env.get_candidate_info(observation), 
                       'epsilon': epsilon, 
                       'do_explore': do_explore, 
                       'is_train': is_train, 
                       'batch_wise': False}
-        out_dict = self.actor(input_dict)
+        out_dict = actor(input_dict)
         return out_dict
     
     def get_reward(self, user_feedback):

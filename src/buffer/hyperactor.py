@@ -3,15 +3,14 @@ import numpy as np
 
 from src.buffer.base import BaseBuffer
 
+
 class HyperActorBuffer(BaseBuffer):
 
     def __init__(self, buffer_size, device):
         super().__init__(buffer_size, device)
         self.buffer_size = buffer_size
 
-
     def reset(self, env, actor):
-        
         '''
         @output:
         - buffer: {'observation': {'user_profile': {'user_id': (L,), 
@@ -28,47 +27,51 @@ class HyperActorBuffer(BaseBuffer):
                    'response': {'reward': (L,), 
                                 'immediate_response':, (L, action_dim * response_dim)}}
         '''
-        
+
         super().reset(env, actor)
-        
-        self.buffer['user_response']['immediate_response'] = torch.zeros(self.buffer_size, 
+
+        self.buffer['user_response']['immediate_response'] = torch.zeros(self.buffer_size,
                                                                          env.response_dim * actor.effect_action_dim)\
-                                                         .to(torch.float).to(self.device)
+            .to(torch.float).to(self.device)
         self.buffer['policy_output']['action'] = torch.zeros(self.buffer_size, actor.hyper_action_dim)\
-                                                         .to(torch.float).to(self.device)
+            .to(torch.float).to(self.device)
         self.buffer['policy_output']['effect_action'] = torch.zeros(self.buffer_size, actor.effect_action_dim)\
-                                                         .to(torch.long).to(self.device)
-        
+            .to(torch.long).to(self.device)
+
         return self.buffer
-    
+
     def sample(self, batch_size):
         '''
         Batch sample is organized as a tuple of (observation, policy_output, user_response, done_mask, next_observation)
-        
+
         Buffer: see reset@output
         '''
         # get indices
-        indices = np.random.randint(0, self.current_buffer_size, size = batch_size)
+        indices = np.random.randint(
+            0, self.current_buffer_size, size=batch_size)
         # observation
-        profile = {k:v[indices] for k,v in self.buffer["observation"]["user_profile"].items()}
-        history = {k:v[indices] for k,v in self.buffer["observation"]["user_history"].items()}
+        profile = {k: v[indices]
+                   for k, v in self.buffer["observation"]["user_profile"].items()}
+        history = {k: v[indices]
+                   for k, v in self.buffer["observation"]["user_history"].items()}
         observation = {"user_profile": profile, "user_history": history}
         # next observation
-        profile = {k:v[indices] for k,v in self.buffer["next_observation"]["user_profile"].items()}
-        history = {k:v[indices] for k,v in self.buffer["next_observation"]["user_history"].items()}
+        profile = {k: v[indices]
+                   for k, v in self.buffer["next_observation"]["user_profile"].items()}
+        history = {k: v[indices]
+                   for k, v in self.buffer["next_observation"]["user_history"].items()}
         next_observation = {"user_profile": profile, "user_history": history}
         # policy output
-        policy_output = {"state": self.buffer["policy_output"]["state"][indices], 
-                         "action": self.buffer["policy_output"]["action"][indices], 
-                         "hyper_action": self.buffer["policy_output"]["action"][indices], 
+        policy_output = {"state": self.buffer["policy_output"]["state"][indices],
+                         "action": self.buffer["policy_output"]["action"][indices],
+                         "hyper_action": self.buffer["policy_output"]["action"][indices],
                          "effect_action": self.buffer["policy_output"]["effect_action"][indices]}  # main change to BaseBuffer
         # user response
-        user_response = {"reward": self.buffer["user_response"]["reward"][indices], 
+        user_response = {"reward": self.buffer["user_response"]["reward"][indices],
                          "immediate_response": self.buffer["user_response"]["immediate_response"][indices]}
         # done mask
         done_mask = self.buffer["done_mask"][indices]
         return observation, policy_output, user_response, done_mask, next_observation
-    
 
     def update(self, observation, policy_output, user_feedback, next_observation):
         '''
@@ -93,34 +96,34 @@ class HyperActorBuffer(BaseBuffer):
         if self.buffer_head + B >= self.buffer_size:
             tail = self.buffer_size - self.buffer_head
             indices = [self.buffer_head + i for i in range(tail)] + \
-                        [i for i in range(B - tail)]
+                [i for i in range(B - tail)]
         else:
             indices = [self.buffer_head + i for i in range(B)]
         indices = torch.tensor(indices).to(torch.long).to(self.device)
-        
+
         # update buffer - observation
-        for k,v in observation['user_profile'].items():
+        for k, v in observation['user_profile'].items():
             self.buffer['observation']['user_profile'][k][indices] = v
-        for k,v in observation['user_history'].items():
+        for k, v in observation['user_history'].items():
             self.buffer['observation']['user_history'][k][indices] = v
         # update buffer - next observation
-        for k,v in next_observation['user_profile'].items():
+        for k, v in next_observation['user_profile'].items():
             self.buffer['next_observation']['user_profile'][k][indices] = v
-        for k,v in next_observation['user_history'].items():
+        for k, v in next_observation['user_history'].items():
             self.buffer['next_observation']['user_history'][k][indices] = v
         # update buffer - policy output
         self.buffer['policy_output']['state'][indices] = policy_output['state']
         self.buffer['policy_output']['action'][indices] = policy_output['hyper_action']
-        self.buffer['policy_output']['effect_action'][indices] = policy_output['effect_action'] # main change to BaseBuffer
+        # main change to BaseBuffer
+        self.buffer['policy_output']['effect_action'][indices] = policy_output['effect_action']
         # update buffer - user response
-        self.buffer['user_response']['immediate_response'][indices] = user_feedback['immediate_response'].view(B,-1)
+        self.buffer['user_response']['immediate_response'][indices] = user_feedback['immediate_response'].view(
+            B, -1)
         self.buffer['user_response']['reward'][indices] = user_feedback['reward']
         # update buffer - done
         self.buffer['done_mask'][indices] = user_feedback['done']
-        
+
         # buffer pointer
         self.buffer_head = (self.buffer_head + B) % self.buffer_size
         self.n_stream_record += B
         self.current_buffer_size = min(self.n_stream_record, self.buffer_size)
-        
-        

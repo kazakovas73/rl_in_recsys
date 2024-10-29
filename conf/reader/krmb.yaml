@@ -1,4 +1,4 @@
-_target_: src.reader.krmb.KRMBSeqReader
+# _target_: src.reader.krmb.KRMBSeqReader
 user_meta_file: ${user_meta_file}
 item_meta_file: ${item_meta_file}
 max_hist_seq_len: 100

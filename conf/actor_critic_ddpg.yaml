@@ -4,7 +4,10 @@ defaults:
   - params: default
   - reader: krmb
   - simulator: krmb
-  
+
+
+path_to_simulator_ckpt: output/env/user_KRMBUserResponse_lr0.0001_reg0_nlayer2.model
+
 
 
 logging:
