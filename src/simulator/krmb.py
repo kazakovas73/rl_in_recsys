@@ -46,6 +46,8 @@ class KRMBUserResponse(BaseModel):
 
         stats = reader_stats
 
+        self.reader_stats = reader_stats
+
         self.user_feature_dims = stats['user_feature_dims'] # {feature_name: dim}
         self.item_feature_dims = stats['item_feature_dims'] # {feature_name: dim}
 
