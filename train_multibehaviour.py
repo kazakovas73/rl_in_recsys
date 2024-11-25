@@ -75,11 +75,14 @@ def main(cfg: DictConfig):
     else:
         device = "cpu"
 
-    reader = instantiate(cfg.reader)
+    print(device)
+
+    reader = KRMBSeqReader(**cfg.reader)
 
     model = KRMBUserResponse(
         **cfg.simulator,
-        reader_stats=reader.get_statistics()
+        reader_stats=reader.get_statistics(),
+        logger=logger
     )
 
     model = model.to(device)
