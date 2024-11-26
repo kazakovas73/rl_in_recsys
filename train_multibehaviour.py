@@ -75,8 +75,6 @@ def main(cfg: DictConfig):
     else:
         device = "cpu"
 
-    print(device)
-
     reader = KRMBSeqReader(**cfg.reader)
 
     model = KRMBUserResponse(
@@ -157,7 +155,7 @@ def main(cfg: DictConfig):
                 if stop_count >= 3:
                     break
             else:
-                model.save_checkpoint()
+                model.save_checkpoint(output_dir)
             
     except KeyboardInterrupt:
         logger.info("Early stop manually")

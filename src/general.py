@@ -107,7 +107,7 @@ class BaseModel(nn.Module):
 
     def save_checkpoint(self, output_dir):
 
-        out_filename = str(Path(output_dir) / self.model_path / ".checkpoint")
+        out_filename = str(Path(output_dir) / str(self.model_path) + ".checkpoint")
 
         torch.save({
             "model_state_dict": self.state_dict(),
