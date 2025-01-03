@@ -231,21 +231,7 @@ class BaseRLAgent():
         return new_observation
     
     def apply_policy(self, observation, actor, epsilon, do_explore, is_train):
-        '''
-        @input:
-        - observation:{'user_profile':{
-                           'user_id': (B,)
-                           'uf_{feature_name}': (B,feature_dim), the user features}
-                       'user_history':{
-                           'history': (B,max_H)
-                           'history_if_{feature_name}': (B,max_H,feature_dim), the history item features}
-        - actor: the actor model
-        - epsilon: scalar
-        - do_explore: boolean
-        - is_train: boolean
-        @output:
-        - policy_output
-        '''
+        
         input_dict = {'observation': observation, 
                       'candidates': self.env.get_candidate_info(observation), 
                       'epsilon': epsilon, 

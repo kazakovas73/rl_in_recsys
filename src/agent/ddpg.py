@@ -214,8 +214,10 @@ class DDPG(BaseRLAgent):
         return out_dict
     
     def apply_critic(self, observation, policy_output, critic):
-        feed_dict = {'state': policy_output['state'],
-                     'action': policy_output['hyper_action']}
+        feed_dict = {
+            'state': policy_output['state'],
+            'action': policy_output['hyper_action']
+        }
         return critic(feed_dict)
 
     def save(self):

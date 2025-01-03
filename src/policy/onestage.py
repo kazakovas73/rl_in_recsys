@@ -281,8 +281,7 @@ class OneStageHyperPolicy_with_DotScore(OneStagePolicy):
         # epsilon probability for uniform sampling under exploration
         do_uniform = np.random.random() < epsilon
         # (B, hyper_action_dim)
-        hyper_action_raw = self.hyper_action_layer(
-            user_state).view(B, self.action_dim)
+        hyper_action_raw = self.hyper_action_layer(user_state).view(B, self.action_dim)
 #         print('hyper_action_raw:', hyper_action_raw.shape)
 
         # (B, hyper_action_dim), hyper action exploration
@@ -358,3 +357,4 @@ class OneStageHyperPolicy_with_DotScore(OneStagePolicy):
             out_dict['probs'] = torch.gather(
                 out_dict['all_probs'], 1, out_dict['indices'])
         return out_dict
+ 

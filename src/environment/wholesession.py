@@ -224,15 +224,13 @@ class KREnvironment_WholeSession_GPU(BaseRLEnvironment):
 
             # update user history in current_observation
             # {'slate': (B, slate_size), 'updated_observation': a copy of self.current_observation}
-            update_info = self.update_observation(
-                None, action, response, done_mask)
+            update_info = self.update_observation(None, action, response, done_mask)
 
             # env_history update: step, leave, temper, converage, ILD
             self.current_step += 1
             n_leave = done_mask.sum()
             self.env_history['leave'].append(n_leave.item())
-            self.env_history['temper'].append(
-                torch.mean(self.current_temper).item())
+            self.env_history['temper'].append(torch.mean(self.current_temper).item())
             self.env_history['coverage'].append(response_dict['coverage'])
             self.env_history['ILD'].append(response_dict['ILD'])
 
@@ -289,8 +287,7 @@ class KREnvironment_WholeSession_GPU(BaseRLEnvironment):
         batch = {'item_id': self.candidate_iids[action]}
         batch.update(self.current_observation['user_profile'])
         batch.update(self.current_observation['user_history'])
-        batch.update({k: v[action]
-                     for k, v in self.candidate_item_meta.items()})
+        batch.update({k: v[action] for k, v in self.candidate_item_meta.items()})
         out_dict = self.immediate_response_model(batch)
         ########################################
 
@@ -298,8 +295,7 @@ class KREnvironment_WholeSession_GPU(BaseRLEnvironment):
         behavior_scores = out_dict['probs']
 
         # (B, slate_size, item_dim)
-        item_enc = self.candidate_item_encoding[action].view(
-            B, self.slate_size, -1)
+        item_enc = self.candidate_item_encoding[action].view(B, self.slate_size, -1)
         item_enc_norm = F.normalize(item_enc, p=2.0, dim=-1)
         # (B, slate_size)
         corr_factor = self.get_intra_slate_similarity(item_enc_norm)

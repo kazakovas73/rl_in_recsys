@@ -31,3 +31,28 @@ class QCritic(nn.Module):
         Q = self.net(torch.cat((state_emb, action_emb), dim=-1)).view(-1)
         reg = get_regularization(self.net)
         return {'q': Q, 'reg': reg}
+    
+
+class ValueNetwork(nn.Module):
+
+    def __init__(self, value_hidden_dims, value_dropout_rate, policy, logger):
+        super().__init__()
+        self.state_dim = policy.state_dim
+        self.net = DNN(
+            in_dim=self.state_dim, 
+            hidden_dims=value_hidden_dims, 
+            out_dim=1,
+            dropout_rate=value_dropout_rate, 
+            do_batch_norm=True
+        )
+        logger.info("QCritic layers:")
+        logger.info(f"NET: {self.net}")
+
+    def forward(self, feed_dict):
+        '''
+        @input:
+        - feed_dict: {'state': (B, state_dim), 'action': (B, action_dim)}
+        '''
+        state_emb = feed_dict['state'].view(-1, self.state_dim)
+        V = self.net(state_emb).view(-1)
+        return V
