@@ -37,8 +37,7 @@ class DDPG(BaseRLAgent):
         env, 
         actor, 
         critic, 
-        buffer,
-        logger  
+        buffer
     ):
         '''
         components:
@@ -71,8 +70,7 @@ class DDPG(BaseRLAgent):
             actor_decay,
             batch_size,
             device,
-            env, actor, buffer,
-            logger)
+            env, actor, buffer)
         
         self.gamma = gamma
 

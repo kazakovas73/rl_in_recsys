@@ -1,10 +1,6 @@
 import os
-import logging
-import hydra
-from hydra.utils import instantiate
-from omegaconf import DictConfig, OmegaConf
-import torch
 from pathlib import Path
+import torch
 from tqdm import tqdm
 from time import time
 import torch
@@ -19,8 +15,6 @@ from datetime import datetime
 import pytz
 
 from src.utils import set_random_seed, wrap_batch, show_batch
-
-logger = logging.getLogger(__name__)
 
 def do_eval(model, reader, device, batch_size, val_batch_size):
     reader.set_phase("val")
@@ -48,39 +42,59 @@ def do_eval(model, reader, device, batch_size, val_batch_size):
     pbar.close()
     return val_report
 
-@hydra.main(config_path="conf", config_name="multibehaviour", version_base="1.1")
-def main(cfg: DictConfig):
-    # Starting logging
-    logging.basicConfig(level=cfg.logging.level)
-    # logger.info(OmegaConf.to_yaml(cfg))
-
-    output_dir = hydra.core.hydra_config.HydraConfig.get().runtime.output_dir
-
+def main():
     torch.multiprocessing.set_sharing_strategy('file_system')
 
-    cuda = cfg.cuda
-    seed = cfg.seed
-    lr = cfg.lr
-    batch_size = cfg.batch_size
-    val_batch_size = cfg.val_batch_size
-    epochs = cfg.epochs
-    save_with_val = cfg.save_with_val
+    output_dir = Path("env/")
+
+    cuda = 0
+    seed = 42
+    lr = 0.0001
+    reg_coef = 0.001
+    batch_size = 128
+    val_batch_size = 128
+    epochs = 2
+    save_with_val = True
 
     set_random_seed(seed)
 
-    if cuda >= 0 and torch.cuda.is_available():
+    if torch.cuda.is_available():
         os.environ["CUDA_VISIBLE_DEVICES"] = str(cuda)
         torch.cuda.set_device(cuda)
         device = f"cuda:{cuda}"
     else:
         device = "cpu"
 
-    reader = KRMBSeqReader(**cfg.reader)
+    reader = KRMBSeqReader(
+        user_meta_file = "dataset/user_features_Pure_fillna.csv",
+        item_meta_file = "dataset/video_features_basic_Pure_fillna.csv",
+        max_hist_seq_len = 100,
+        val_holdout_per_user = 5,
+        test_holdout_per_user = 5,
+        meta_file_sep = ',',
+        train_file = "dataset/log_session_4_08_to_5_08_Pure.csv",
+        val_file = '',
+        test_file = '',
+        n_worker = 4,
+        data_separator = ',',
+    )
 
     model = KRMBUserResponse(
-        **cfg.simulator,
-        reader_stats=reader.get_statistics(),
-        logger=logger
+        model_path = f"env/user_KRMBUserResponse_lr0.0001_reg0.001_nlayer2.model",
+        loss = 'bce',
+        l2_coef = reg_coef,
+
+        user_latent_dim = 32,
+        item_latent_dim = 32,
+        enc_dim = 64,
+        attn_n_head = 4,
+        transformer_d_forward = 64,
+        transformer_n_layer = 2,
+        state_hidden_dims = [128],
+        scorer_hidden_dims = [128, 32],
+        dropout_rate = 0.1,
+        device = device, 
+        reader_stats=reader.get_statistics()
     )
 
     model = model.to(device)
@@ -91,18 +105,17 @@ def main(cfg: DictConfig):
     try:
         
         best_auc = {f: 0 for f in model.feedback_types}
-        logger.info(f"validation before training:")
+        print(f"validation before training:")
 
         val_report = do_eval(model, reader, device, batch_size, val_batch_size)
-
-        logger.info(f"Val result:")
-        logger.info(val_report)
+        print(f"Val result:")
+        print(val_report)
         
         epo = 0
         stop_count = 0
         while epo < epochs:
             epo += 1
-            logger.info(f"epoch {epo} training")
+            print(f"epoch {epo} training")
             
             # train an epoch
             model.train()
@@ -128,17 +141,17 @@ def main(cfg: DictConfig):
                 optimizer.step()
                 pbar.update(batch_size)
                 if i % 100 == 0:
-                    logger.info(f"Iteration {i}, loss: {np.mean(step_loss[-100:])}")
-                    logger.info({fb: np.mean(v[-100:]) for fb,v in step_behavior_loss.items()})
+                    print(f"Iteration {i}, loss: {np.mean(step_loss[-100:])}")
+                    print({fb: np.mean(v[-100:]) for fb,v in step_behavior_loss.items()})
             pbar.close()
-            logger.info("Epoch {}; time {:.4f}".format(epo, time() - t1))
+            print("Epoch {}; time {:.4f}".format(epo, time() - t1))
 
             # validation
             t2 = time()
-            logger.info(f"epoch {epo} validating")
+            print(f"epoch {epo} validating")
             val_report = do_eval(model, reader, device, batch_size, val_batch_size)
-            logger.info(f"Val result:")
-            logger.info(val_report)
+            print(f"Val result:")
+            print(val_report)
             improve = 0
             for f,v in val_report['auc'].items():
                 if v > best_auc[f]:
@@ -158,7 +171,7 @@ def main(cfg: DictConfig):
                 model.save_checkpoint(output_dir)
             
     except KeyboardInterrupt:
-        logger.info("Early stop manually")
+        print("Early stop manually")
         exit_here = input("Exit completely without evaluation? (y/n) (default n):")
         if exit_here.lower().startswith('y'):
             print(os.linesep + '-' * 20 + ' END: ' + datetime.now(pytz.timezone('Europe/Moscow')) + ' ' + '-' * 20)

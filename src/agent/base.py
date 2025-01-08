@@ -42,9 +42,7 @@ class BaseRLAgent():
 
         env, 
         actor, 
-        buffer,
-
-        logger
+        buffer
     ):
         self.reward_func = reward_func
         self.n_iter = n_iter
@@ -66,7 +64,6 @@ class BaseRLAgent():
         self.batch_size = batch_size
 
         self.device = device
-        self.logger = logger
 
         # components
         self.env = env
@@ -98,13 +95,13 @@ class BaseRLAgent():
             self.load()
         
         t = time.time()
-        self.logger.info("Run procedures before training")
+        print("Run procedures before training")
         self.action_before_train()
         t = time.time()
         start_time = t
         
         # training
-        self.logger.info("Training:")
+        print("Training:")
         step_offset = sum(self.n_iter[:-1])
         do_buffer_update = True
         observation = deepcopy(self.env.current_observation)
@@ -119,12 +116,12 @@ class BaseRLAgent():
             # log monitor records
             if i > 0 and i % self.check_episode == 0:
                 t_prime = time.time()
-                self.logger.info(f"Episode step {i}, time diff {t_prime - t}, total time diff {t - start_time})")
+                print(f"Episode step {i}, time diff {t_prime - t}, total time diff {t - start_time})")
                 episode_report, train_report = self.get_report(smoothness = self.check_episode)
                 log_str = f"step: {i} @ online episode: {episode_report} @ training: {train_report}\n"
                 with open(self.save_path + ".report", 'a') as outfile:
                     outfile.write(log_str)
-                self.logger.info(log_str)
+                print(log_str)
                 t = t_prime
 
             # save model and training info

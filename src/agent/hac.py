@@ -38,7 +38,6 @@ class HAC(DDPG):
             actor, 
             critic, 
             buffer,
-            logger,
 
             behavior_lr,
             behavior_decay,
@@ -69,8 +68,7 @@ class HAC(DDPG):
             env, 
             actor, 
             critic, 
-            buffer,
-            logger
+            buffer
         )
         self.behavior_lr = behavior_lr
         self.behavior_decay = behavior_decay

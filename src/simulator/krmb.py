@@ -1,4 +1,3 @@
-from matplotlib.pyplot import axes, axis
 import torch
 import torch.nn as nn
 
@@ -29,8 +28,7 @@ class KRMBUserResponse(BaseModel):
 
         reader_stats,
 
-        device,
-        logger
+        device
             
         ):
         super().__init__(model_path, loss, l2_coef, device)
@@ -102,10 +100,10 @@ class KRMBUserResponse(BaseModel):
         self.scorer = DNN(3*enc_dim, state_hidden_dims, self.feedback_dim * enc_dim, 
                           dropout_rate = dropout_rate, do_batch_norm = True)
         
-        logger.info("SIMULATOR layers:")
-        logger.info(f"Positional embeddings: {self.posEmb}")
-        logger.info(f"Transformer layer: {self.transformer}")
-        logger.info(f"Scorer layer: {self.scorer}")
+        print("SIMULATOR layers:")
+        print(f"Positional embeddings: {self.posEmb}")
+        print(f"Transformer layer: {self.transformer}")
+        print(f"Scorer layer: {self.scorer}")
 
         
     def to(self, device):

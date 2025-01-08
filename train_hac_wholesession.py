@@ -20,19 +20,19 @@ from src.reward import get_immediate_reward
 
 from src.environment.wholesession import KREnvironment_WholeSession_GPU
 
-logger = logging.getLogger(__name__)
-
-@hydra.main(config_path="conf", config_name="actor_critic", version_base="1.1")
 def main(cfg: DictConfig):
-    # Starting logging
-    logging.basicConfig(level=cfg.logging.level)
-    # logger.info(OmegaConf.to_yaml(cfg))
 
-    output_dir = Path(hydra.core.hydra_config.HydraConfig.get().runtime.output_dir)
+    output_dir = Path("env/")
 
-    seed = cfg.seed
-    cuda = cfg.cuda
-    path_to_simulator_ckpt = str(Path(cfg.base_dir) / cfg.path_to_simulator_ckpt)
+    cuda = 0
+    seed = 42
+    lr = 0.0001
+    reg_coef = 0.001
+    batch_size = 128
+    val_batch_size = 128
+    epochs = 2
+    save_with_val = True
+    path_to_simulator_ckpt = "env/user_KRMBUserResponse_lr0.0001_reg0.001_nlayer2.model"
     model_path = output_dir / "model"
     uirm_log_path = output_dir / "log"
     save_path = output_dir / "model"
@@ -42,7 +42,7 @@ def main(cfg: DictConfig):
     if torch.cuda.is_available():
         os.environ["CUDA_VISIBLE_DEVICES"] = str(cuda)
         torch.cuda.set_device(cuda)
-        device = f"cuda"
+        device = f"cuda:{cuda}"
     else:
         device = "cpu"
 
@@ -50,14 +50,37 @@ def main(cfg: DictConfig):
     reader_stats = checkpoint["reader_stats"]
 
     reader = KRMBSeqReader(
-        **cfg.reader
+        user_meta_file = "dataset/user_features_Pure_fillna.csv",
+        item_meta_file = "dataset/video_features_basic_Pure_fillna.csv",
+        max_hist_seq_len = 100,
+        val_holdout_per_user = 5,
+        test_holdout_per_user = 5,
+        meta_file_sep = ',',
+        train_file = "dataset/log_session_4_08_to_5_08_Pure.csv",
+        val_file = '',
+        test_file = '',
+        n_worker = 4,
+        data_separator = ',',
     )
 
     cfg.simulator.model_path = path_to_simulator_ckpt
 
     simulator = KRMBUserResponse(
-        **cfg.simulator,
-        reader_stats=reader_stats
+        model_path = f"env/user_KRMBUserResponse_lr0.0001_reg0.001_nlayer2.model",
+        loss = 'bce',
+        l2_coef = reg_coef,
+
+        user_latent_dim = 32,
+        item_latent_dim = 32,
+        enc_dim = 64,
+        attn_n_head = 4,
+        transformer_d_forward = 64,
+        transformer_n_layer = 2,
+        state_hidden_dims = [128],
+        scorer_hidden_dims = [128, 32],
+        dropout_rate = 0.1,
+        device = device, 
+        reader_stats=reader.get_statistics()
     )
 
     env = KREnvironment_WholeSession_GPU(
@@ -82,7 +105,7 @@ def main(cfg: DictConfig):
     policy = OneStageHyperPolicy_with_DotScore(
         model_path=str(model_path), 
         loss='bce', 
-        l2_coef=0.0, 
+        l2_coef=0.001, 
 
         state_user_latent_dim=16,
         state_item_latent_dim=16,
@@ -142,7 +165,6 @@ def main(cfg: DictConfig):
         actor=policy, 
         critic=critic, 
         buffer=buffer,
-        logger=logger,
 
         behavior_lr=0.0001,
         behavior_decay=0.00003,
@@ -153,10 +175,10 @@ def main(cfg: DictConfig):
     try:
         agent.train()
     except KeyboardInterrupt:
-        logger.info("Early stop manually")
+        print("Early stop manually")
         exit_here = input("Exit completely without evaluation? (y/n) (default n):")
         if exit_here.lower().startswith('y'):
-            logger.info(os.linesep + '-' * 20 + ' END: ' + datetime.now(pytz.timezone('Europe/Moscow')) + ' ' + '-' * 20)
+            print(os.linesep + '-' * 20 + ' END: ' + datetime.now(pytz.timezone('Europe/Moscow')) + ' ' + '-' * 20)
             exit(1)
 
 
