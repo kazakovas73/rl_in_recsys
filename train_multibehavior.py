@@ -38,7 +38,8 @@ def do_eval(model, reader, args):
 
 
 if __name__ == '__main__':
-    
+
+    torch.set_num_threads(8)
     torch.multiprocessing.set_sharing_strategy('file_system')
     
     # initial args
@@ -60,6 +61,7 @@ if __name__ == '__main__':
     parser.add_argument('--save_with_val', action='store_true', help='save when validation check is true')
     parser.add_argument('--epoch', type=int, default=10, help='number of epoch')
     parser.add_argument('--cuda', type=int, default=-1, help='cuda device number; set to -1 (default) if using cpu')
+
     
     # customized args
     parser = modelClass.parse_model_args(parser)
@@ -71,6 +73,8 @@ if __name__ == '__main__':
     
     reader = readerClass(args)
     print('data statistics:\n', reader.get_statistics())
+
+    print(reader)
     
     # cuda
     if args.cuda >= 0 and torch.cuda.is_available():
@@ -80,12 +84,16 @@ if __name__ == '__main__':
     else:
         device = "cpu"
     args.device = device
+
+    print(f"Device: {device}")
     
     # model and optimizer
     model = modelClass(args, reader.get_statistics(), device)
     model = model.to(device)
     optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
     model.optimizer = optimizer
+
+    print(model)
     
     try:
         

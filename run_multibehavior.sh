@@ -9,14 +9,14 @@ mkdir -p output/Kuairand_${KR_FLAG}/env/log
 output_path=output/Kuairand_${KR_FLAG}/
 
 # data source path
-data_path=dataset/Kuairand_${KR_FLAG}/
+data_path=dataset/
 
 MODEL='KRMBUserResponse'
 # MODEL='KRMBUserResponseWithBias'
 
-for LR in 0.0001 0.00001
+for LR in 0.0001
 do
-    for REG in 0
+    for REG in 0.0001
     do
         for N_LAYER in 2
         do
@@ -24,11 +24,11 @@ do
             file_key=user_${MODEL}_lr${LR}_reg${REG}_nlayer${N_LAYER}
             
             python train_multibehavior.py\
-                --epoch 10\
+                --epoch 2\
                 --seed 619607\
                 --lr ${LR}\
-                --batch_size 128\
-                --val_batch_size 128\
+                --batch_size 256\
+                --val_batch_size 256\
                 --cuda 0\
                 --reader KRMBSeqReader\
                 --train_file ${data_path}log_session_4_08_to_5_08_${KR_FLAG}.csv\
