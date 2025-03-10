@@ -31,9 +31,9 @@ BUFFER_SIZE=100000
 
 # agent args
 AGENT_CLASS='HAC_opt'
-GAMMA=0.9
+GAMMA=0.99
 REWARD_FUNC='get_immediate_reward'
-N_ITER=500000
+N_ITER=20000
 START_STEP=100
 INITEP=0.01
 ELBOW=0.1
@@ -45,15 +45,15 @@ BS=256
 
 for HA_VAR in 0.1
 do
-    for REG in 0.00001
+    for REG in 0.000005
     do
         for INITEP in 0.01
         do
-            for CRITIC_LR in 0.001
+            for CRITIC_LR in 0.0001
             do
-                for ACTOR_LR in 0.00001 # 0.00003 0.0001 0.0003
+                for ACTOR_LR in 0.00005
                 do
-                    for SEED in 11 # 13 17 19 23
+                    for SEED in 101 102 103 104 105 106 107 108 109 110 110 112 113 114 115 116 117 118 119 120
                     do
                         mkdir -p ${output_path}agents/HAC_${POLICY_CLASS}_actor${ACTOR_LR}_critic${CRITIC_LR}_niter${N_ITER}_reg${REG}_ep${INITEP}_noise${HA_VAR}_bs${BS}_epbs${EP_BS}_step${MAX_STEP}_seed${SEED}/
 
@@ -65,7 +65,7 @@ do
                             --agent_class ${AGENT_CLASS}\
                             --seed ${SEED}\
                             --cuda 0\
-                            --w 0.1\
+                            --w 10\
                             --max_step_per_episode ${MAX_STEP}\
                             --initial_temper ${MAX_STEP}\
                             --uirm_log_path ${output_path}env/log/${log_name}.model.log\

@@ -38,7 +38,7 @@ if __name__ == '__main__':
     parser.add_argument('--seed', type=int, default=11, help='random seed')
     parser.add_argument('--cuda', type=int, default=-1, help='cuda device number; set to -1 (default) if using cpu')
 
-    parser.add_argument('--w', type=float, default=0.1, help='w for potential')
+    parser.add_argument('--w', type=float, default=1., help='w for potential')
     
     # customized args
     parser = envClass.parse_model_args(parser)

@@ -4,10 +4,13 @@ import torch
 import torch.nn.functional as F
 import numpy as np
 from itertools import chain
-
+from copy import deepcopy
 import utils
 from model.agent.DDPG import DDPG
 from model.components import DNN
+from tqdm import tqdm
+import wandb
+
     
 class HAC_opt(DDPG):
     @staticmethod
@@ -51,26 +54,9 @@ class HAC_opt(DDPG):
         return parser
     
     
-    def __init__(self, *input_args):
-        '''
-        components:
-        - actor_behavior_optimizer
-        - components from DDPG:
-            - critic
-            - critic_optimizer
-            - actor_target
-            - critic_target
-            - components from BaseRLAgent:
-                - env
-                - actor
-                - actor_optimizer
-                - buffer
-                - exploration_scheduler
-                - registered_models
-        '''
-        args, env, actor, critic, potential, w, buffer = input_args
+    def __init__(self, args, env, actor, critic, potential, buffer):
         assert env.single_response
-        super().__init__(*input_args)
+        super().__init__(*[args, env, actor, critic, buffer])
         self.behavior_lr = args.behavior_lr
         self.behavior_decay = args.behavior_decay
         self.hyper_actor_coef = args.hyper_actor_coef
@@ -83,13 +69,72 @@ class HAC_opt(DDPG):
         self.actor_behavior_optimizer = torch.optim.Adam(self.actor.parameters(), 
                                                          lr=args.behavior_lr, weight_decay=args.behavior_decay)
 
-        self.w = w
+        self.args = args
+        
+        self.w = args.w
         self.potential = potential
         self.potential_optimizer = torch.optim.Adam(
             self.potential.parameters(),
             lr=args.critic_lr / 100, 
             # weight_decay=args.behavior_decay
         )
+
+    def train(self):
+        if len(self.n_iter) > 2:
+            self.load()
+        
+        t = time.time()
+        print("Run procedures before training")
+        self.action_before_train()
+        t = time.time()
+        start_time = t
+
+        wandb.finish()
+        wandb.init(
+            project=self.env.__class__.__name__,
+            name=f"{self.__class__.__name__}_{self.actor.__class__.__name__}_{self.critic.__class__.__name__}",
+            config={
+                **vars(self.args)
+            }
+        )
+        
+        # training
+        print("Training:")
+        step_offset = sum(self.n_iter[:-1])
+        do_buffer_update = True
+        observation = deepcopy(self.env.current_observation)
+        for i in tqdm(range(step_offset, step_offset + self.n_iter[-1]//10)):
+            do_explore = np.random.random() < self.explore_rate if self.explore_rate < 1 else True
+            # online inference
+            observation = self.run_episode_step(i, self.exploration_scheduler.value(i), observation, 
+                                                do_buffer_update, do_explore)
+            # online training
+            if i % self.train_every_n_step == 0:
+                self.step_train()
+            # log monitor records
+            if i > 0 and i % self.check_episode == 0:
+                t_prime = time.time()
+                print(f"Episode step {i}, time diff {t_prime - t}, total time diff {t - start_time})")
+                episode_report, train_report = self.get_report(smoothness = self.check_episode)
+                log_str = f"step: {i} @ online episode: {episode_report} @ training: {train_report}\n"
+                with open(self.save_path + ".report", 'a') as outfile:
+                    outfile.write(log_str)
+                print(log_str)
+                t = t_prime
+
+                wandb.log({
+                    "step": i, 
+                    **episode_report,
+                    **train_report
+                })
+
+            # save model and training info
+            if i % self.save_episode == 0:
+                self.save()
+
+        wandb.finish()
+               
+        self.action_after_train()
 
     def setup_monitors(self):
         '''

@@ -166,3 +166,4 @@ outputs/
 output/
 tmp/
 /.DS_Store
+wandb/
