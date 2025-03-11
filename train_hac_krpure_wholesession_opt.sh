@@ -11,7 +11,7 @@ log_name="user_KRMBUserResponse_lr0.0001_reg0.0001_nlayer2"
 # environment args
 ENV_CLASS='KREnvironment_WholeSession_GPU'
 MAX_STEP=20
-SLATE_SIZE=6
+SLATE_SIZE=32
 EP_BS=32
 RHO=0.2
 
@@ -31,29 +31,29 @@ BUFFER_SIZE=100000
 
 # agent args
 AGENT_CLASS='HAC_opt'
-GAMMA=0.99
+GAMMA=0.9
 REWARD_FUNC='get_immediate_reward'
 N_ITER=20000
 START_STEP=100
 INITEP=0.01
 ELBOW=0.1
 EXPLORE_RATE=1.0
-BS=256
+BS=128
 # if want to explore in train set --do_explore_in_train
 
 
 
 for HA_VAR in 0.1
 do
-    for REG in 0.000005
+    for REG in 0.0000001
     do
         for INITEP in 0.01
         do
-            for CRITIC_LR in 0.0001
+            for CRITIC_LR in 0.000005
             do
-                for ACTOR_LR in 0.00005
+                for ACTOR_LR in 0.0000005
                 do
-                    for SEED in 101 102 103 104 105 106 107 108 109 110 110 112 113 114 115 116 117 118 119 120
+                    for SEED in 101 102 103 104 105 #106 107 108 109 110 110 112 113 114 115 116 117 118 119 120
                     do
                         mkdir -p ${output_path}agents/HAC_${POLICY_CLASS}_actor${ACTOR_LR}_critic${CRITIC_LR}_niter${N_ITER}_reg${REG}_ep${INITEP}_noise${HA_VAR}_bs${BS}_epbs${EP_BS}_step${MAX_STEP}_seed${SEED}/
 
