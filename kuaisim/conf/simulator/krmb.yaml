@@ -1,0 +1,21 @@
+# _target_: src.simulator.krmb.KRMBUserResponse
+model_path: env/user_KRMBUserResponse_lr${lr}_reg${reg_coef}_nlayer${transformer_n_layer}.model
+loss: bce
+l2_coef: ${reg_coef}
+
+user_latent_dim: 32
+item_latent_dim: 32
+enc_dim: 64
+attn_n_head: 4
+transformer_d_forward: 64
+transformer_n_layer: ${transformer_n_layer}
+state_hidden_dims: 
+  - 128
+scorer_hidden_dims:
+  - 128 
+  - 32
+dropout_rate: 0.1
+
+# reader_stats: null
+
+device: ${device}

@@ -1,0 +1,9 @@
+_target_: src.environment.wholesession.KREnvironment_WholeSession_GPU
+max_step_per_episode:
+initial_temper: 
+device:
+uirm_log_path: 
+slate_size: 
+episode_batch_size: 
+item_correlation: 
+single_response: 
