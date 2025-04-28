@@ -1,9 +1,0 @@
-defaults:
-  - _self_
-  - paths: default
-  - params: default
-  - reader: krmb
-  - simulator: krmb
-
-logging:
-  level: INFO
